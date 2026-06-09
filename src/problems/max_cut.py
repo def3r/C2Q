@@ -125,6 +125,34 @@ class MaxCut(NPC):
         # plt.show not included
         # plt.show()
 
+    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+        """Export QAOA and VQE circuits as QASM 2.0 files into output_dir.
+
+        No simulation or optimization is performed — circuits are exported as
+        parametrized templates using the no-optimization variants.
+        """
+        import os
+        from src.circuits_library import export_qasm
+        from src.algorithms.QAOA.QAOA import qaoa_no_optimization
+        from src.algorithms.VQE.VQE import vqe_no_optimization
+        os.makedirs(output_dir, exist_ok=True)
+        qubo = self.to_qubo().Q
+        builders = [
+            ("qaoa", lambda: qaoa_no_optimization(qubo, layers=1)["qc"]),
+            ("vqe", lambda: vqe_no_optimization(qubo, layers=1)["qc"]),
+        ]
+        paths = {}
+        for algo, build in builders:
+            try:
+                qc = build()
+                path = os.path.join(output_dir, f"max_cut_{algo}.qasm")
+                export_qasm(qc.decompose(), path)
+                paths[algo] = path
+                print(f"  Exported {algo} circuit → {path}")
+            except Exception as exc:
+                print(f"  Warning: could not export {algo} circuit: {exc}")
+        return paths
+
     def report(self) -> None:
         """
         Generates a PDF report summarizing the problem, its solution, and a visualization of the result.

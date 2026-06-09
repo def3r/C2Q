@@ -716,6 +716,7 @@ from pathlib import Path
 def batch_generate_reports(
         root: str = DEFAULT_EXAMPLES_ROOT,
         output_dir: str = DEFAULT_REPORTS_ROOT,
+        qasm_dir: str = None,
 ) -> None:
     paths = _iter_json_paths(root)
     if not paths:
@@ -769,6 +770,9 @@ def batch_generate_reports(
 
             problem.report_latex(output_path=str(output_stem))
             print(f"✅ SUCCESS: {output_pdf.name}\n")
+            if qasm_dir is not None and hasattr(problem, "export_circuits_qasm"):
+                print(f"  Exporting QASM circuits for {fname}...")
+                problem.export_circuits_qasm(output_dir=qasm_dir)
             passed += 1
 
         except Exception as e:
@@ -834,6 +838,17 @@ def main():
         action="store_true",
         help="Delete the examples directory before regenerating examples.",
     )
+    parser.add_argument(
+        "--export-qasm",
+        action="store_true",
+        help="Export generated quantum circuits as QASM 2.0 (.qasm) files.",
+    )
+    parser.add_argument(
+        "--qasm-output-dir",
+        type=str,
+        default=".",
+        help="Directory to write .qasm files into (default: current directory).",
+    )
 
     args = parser.parse_args()
 
@@ -861,6 +876,7 @@ def main():
         batch_generate_reports(
             root=args.examples_root,
             output_dir=args.reports_output_dir,
+            qasm_dir=args.qasm_output_dir if args.export_qasm else None,
         )
         return
     # ----------------- Normal pipeline mode -----------------
@@ -938,8 +954,15 @@ def main():
             "please check the JSON input or extend recognise_problem_class."
         )
 
-    print("🧾 Generating LaTeX report for quantum solutions...")
-    problem.report_latex()
+    if args.export_qasm:
+        if hasattr(problem, "export_circuits_qasm"):
+            print(f"📄 Exporting QASM circuits to {args.qasm_output_dir}/...")
+            problem.export_circuits_qasm(output_dir=args.qasm_output_dir)
+        else:
+            print("⚠️  This problem type does not support QASM export.")
+    else:
+        print("🧾 Generating LaTeX report for quantum solutions...")
+        problem.report_latex()
     print("✅ Done.")
 
 

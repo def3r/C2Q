@@ -2,7 +2,7 @@ import math
 from itertools import combinations
 
 import networkx as nx
-import qiskit.qasm2
+import qiskit.qasm3
 from matplotlib import pyplot as plt
 from pysat.formula import CNF
 from qiskit.circuit.library import PhaseOracle, RGQFTMultiplier
@@ -124,6 +124,12 @@ def cnf_to_quantum_oracle_optimized(cnf_formula):
     qc_tmp.barrier()
 
     return qc_tmp
+
+
+def export_qasm(circuit, path: str) -> None:
+    """Write a QuantumCircuit to a QASM 2.0 file."""
+    with open(path, "w") as f:
+        f.write(qiskit.qasm3.dumps(circuit))
 
 
 def clique_oracle(graph: nx.Graph, k):

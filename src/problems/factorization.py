@@ -51,6 +51,22 @@ class Factor(Problem):
 
         return top_two_decimals
 
+    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+        """Export the Grover circuit as a QASM 2.0 file into output_dir."""
+        import os
+        from src.circuits_library import export_qasm
+        os.makedirs(output_dir, exist_ok=True)
+        paths = {}
+        try:
+            qc = self.grover()
+            path = os.path.join(output_dir, "factor_grover.qasm")
+            export_qasm(qc.decompose(), path)
+            paths["grover"] = path
+            print(f"  Exported grover circuit → {path}")
+        except Exception as exc:
+            print(f"  Warning: could not export grover circuit: {exc}")
+        return paths
+
     def report_latex(self, directory=None, output_path=None):
         import time
         import os

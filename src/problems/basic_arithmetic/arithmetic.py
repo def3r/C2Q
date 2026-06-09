@@ -46,6 +46,23 @@ class Arithmetic:
             result = complement_binary_list_to_decimal(decimal_to_complement_binary_list(result, n_bits))
         return result
 
+    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+        """Export the quantum circuit as a QASM 2.0 file into output_dir."""
+        import os
+        from src.circuits_library import export_qasm
+        os.makedirs(output_dir, exist_ok=True)
+        paths = {}
+        try:
+            qc = self.quantum_circuit()
+            name = self.__class__.__name__.lower()
+            path = os.path.join(output_dir, f"{name}_circuit.qasm")
+            export_qasm(qc.decompose(), path)
+            paths["circuit"] = path
+            print(f"  Exported circuit → {path}")
+        except Exception as exc:
+            print(f"  Warning: could not export circuit: {exc}")
+        return paths
+
     def report_latex(self, directory=None, output_path=None):
         import time
         import os
