@@ -1,0 +1,67 @@
+- [x] Addition
+- [x] Factorization : uses Grover's Search Algorithm over factor pairs
+  -> Might be slow, only works over limited inputs (n)
+- [x] MaxCut
+  QAOA -> If the parameter values of gamma and beta are bad, It can literaly find the
+  work solution.
+  Ex: gamma=1.0, beta=0.5 happened to amplify the zero-cut states instead of
+  the optimal ones. Changed to gamma=0.785 (≈ π/4), beta=1.0 which are
+  near-optimal for a 4-cycle.
+  VQE  -> Optimal but slower ig?
+       -> Uses `COBYLA` from `scipy.optimize` tho
+       -> Works for complex graphs
+
+  Here's the direct comparison:
+  ┌──────────────────┬────────────┬───────────┬───────────┬──────────┐
+  │      Graph       │ QAOA ratio │ QAOA opt% │ VQE ratio │ VQE opt% │
+  ├──────────────────┼────────────┼───────────┼───────────┼──────────┤
+  │ 4-node cycle     │ 0.764      │ 49.6%     │ 0.997     │ 98.9%    │
+  ├──────────────────┼────────────┼───────────┼───────────┼──────────┤
+  │ 5-node irregular │ 0.724      │ 12.6%     │ 0.990     │ 96.3%    │
+  ├──────────────────┼────────────┼───────────┼───────────┼──────────┤
+  │ 7-node dense     │ 0.743      │ 19.3%     │ 0.988     │ 98.4%    │
+  └──────────────────┴────────────┴───────────┴───────────┴──────────┘
+
+  QAOA plateaus around 0.75 and gets worse fast. VQE stays near 1.0.
+
+  The reason is structural, not a tuning issue:
+
+  - QAOA p=1 has a hard approximation ceiling. The MaxCut QAOA with one layer
+    is theoretically bounded at ~0.6924 for 3-regular graphs (the Farhi et al.
+    bound). With more edges and irregular topology, the single rzz layer can't
+    entangle distant nodes enough. You'd need p=2, p=3, ... layers to improve —
+    but C2Q only exports p=1.
+  - VQE has more expressibility per qubit. The hardware-efficient ansatz has 2n
+    free parameters vs QAOA's fixed 2. More degrees of freedom → optimizer can
+    find a better state even with one layer.
+  - QAOA's advantage is interpretability, not raw performance. The rzz gates
+    directly encode the problem Hamiltonian, so the circuit has a clear
+    physical meaning and the optimal gamma/beta have known structure. VQE just
+    finds whatever works numerically.
+
+  For scaling beyond ~15 qubits, neither p=1 QAOA nor single-layer VQE will
+  hold up well — you'd need deeper circuits than what C2Q currently exports.
+
+┌─────┬────────┬────────────┬──────────────────────────────────────────────────────────────────┐
+│  #  │ Family │   Class    │                        Circuits exported                         │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 1   │ MIS    │ Graph/NPC  │ QAOA, VQE, Grover → mis_{algo}.qasm (already has readmeExample/) │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 2   │ MaxCut │ Graph/NPC  │ QAOA, VQE → max_cut_{algo}.qasm                                  │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 3   │ TSP    │ Graph/NPC  │ QAOA, VQE, Grover → tsp_{algo}.qasm                              │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 4   │ Clique │ Graph/NPC  │ QAOA, VQE, Grover → clique_{algo}.qasm                           │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 5   │ KColor │ Graph/NPC  │ QAOA, VQE, Grover → kcolor_{algo}.qasm                           │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 6   │ VC     │ Graph/NPC  │ QAOA, VQE, Grover → vc_{algo}.qasm                               │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 7   │ Factor │ Arithmetic │ Grover oracle → factor_grover.qasm                               │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 8   │ ADD    │ Arithmetic │ Ripple-carry circuit → add_circuit.qasm                          │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 9   │ MUL    │ Arithmetic │ QFT multiplier → mul_circuit.qasm                                │
+├─────┼────────┼────────────┼──────────────────────────────────────────────────────────────────┤
+│ 10  │ SUB    │ Arithmetic │ Subtractor circuit → sub_circuit.qasm                            │
+└─────┴────────┴────────────┴──────────────────────────────────────────────────────────────────┘
