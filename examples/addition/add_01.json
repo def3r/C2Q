@@ -1,0 +1,9 @@
+{
+  "family": "ADD",
+  "goal": "add two integers using a quantum ripple-carry adder",
+  "description": "Compute 3 + 5 = 8 with a quantum circuit",
+  "instance": {
+    "operands": [113, 5],
+    "bits": 8
+  }
+}
