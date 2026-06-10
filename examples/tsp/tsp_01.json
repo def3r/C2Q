@@ -1,0 +1,13 @@
+{
+  "family": "TSP",
+  "goal": "minimise routing cost for a traveling salesman tour",
+  "description": "3-city TSP: find the shortest Hamiltonian tour",
+  "instance": {
+    "graph_rep": "matrix",
+    "graphs": {
+      "G1": [[0, 2, 5],
+             [2, 0, 3],
+             [5, 3, 0]]
+    }
+  }
+}

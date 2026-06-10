@@ -41,6 +41,16 @@
 
   For scaling beyond ~15 qubits, neither p=1 QAOA nor single-layer VQE will
   hold up well — you'd need deeper circuits than what C2Q currently exports.
+- [x] Clique
+  -> VQE performs better than QAOA
+- [x] Kcolor
+  -> VQE performs better than QAOA
+- [x] TSP
+  -> VQE performs better than QAOA
+
+> [!IMPORTANT]
+> VQE is slower than QAOA, `performs better` here means better probability of
+> finding correct answer.
 
 ┌─────┬────────┬────────────┬──────────────────────────────────────────────────────────────────┐
 │  #  │ Family │   Class    │                        Circuits exported                         │
