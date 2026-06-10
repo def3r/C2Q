@@ -1,0 +1,9 @@
+{
+  "family": "MUL",
+  "goal": "multiply two integers using a quantum circuit",
+  "description": "Compute 7 × 11 = 77 using QFT-based integer multiplier",
+  "instance": {
+    "operands": [7, 11],
+    "bits": 8
+  }
+}

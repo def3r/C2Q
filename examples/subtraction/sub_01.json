@@ -1,0 +1,9 @@
+{
+  "family": "SUB",
+  "goal": "subtract two integers using a quantum ripple-carry circuit",
+  "description": "Compute 20 - 7 = 13 using two's complement quantum subtraction",
+  "instance": {
+    "operands": [20, 7],
+    "bits": 8
+  }
+}
