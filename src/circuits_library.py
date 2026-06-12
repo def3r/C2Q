@@ -1,17 +1,7 @@
 import math
 from itertools import combinations
 
-import networkx as nx
-import qiskit.qasm3
-from matplotlib import pyplot as plt
-from pysat.formula import CNF
-from qiskit.circuit.library import PhaseOracle, RGQFTMultiplier
-
 import numpy as np
-from qiskit import QuantumCircuit, QuantumRegister
-import matplotlib.pyplot as plt
-# Example CNF Formula using PySAT
-from qiskit.circuit.library import OR
 
 
 def cnf_to_quantum_circuit_optimized(cnf_formula):
@@ -30,6 +20,8 @@ def cnf_to_quantum_circuit_optimized(cnf_formula):
     qc : QuantumCircuit
         The quantum circuit that represents the CNF formula.
     """
+    from qiskit import QuantumCircuit
+    from qiskit.circuit.library import OR
     num_vars = cnf_formula.nv  # Number of variables
     num_clauses = len(cnf_formula.clauses)
 
@@ -104,6 +96,7 @@ def cnf_to_quantum_circuit_optimized(cnf_formula):
 
 
 def cnf_to_quantum_oracle_optimized(cnf_formula):
+    from qiskit import QuantumCircuit
     qc = cnf_to_quantum_circuit_optimized(cnf_formula)
     # Create an empty quantum circuit to hold the full oracle operations
     qc_tmp = QuantumCircuit(qc.num_qubits)
@@ -127,12 +120,13 @@ def cnf_to_quantum_oracle_optimized(cnf_formula):
 
 
 def export_qasm(circuit, path: str) -> None:
-    """Write a QuantumCircuit to a QASM 2.0 file."""
+    """Write a QuantumCircuit to a QASM 3 file."""
+    import qiskit.qasm3
     with open(path, "w") as f:
         f.write(qiskit.qasm3.dumps(circuit))
 
 
-def clique_oracle(graph: nx.Graph, k):
+def clique_oracle(graph, k):
     """
     :param graph:
     :param k:
@@ -142,6 +136,8 @@ def clique_oracle(graph: nx.Graph, k):
 
 
 def quantum_factor_mul_oracle(n):
+    from qiskit import QuantumCircuit, QuantumRegister
+    from qiskit.circuit.library import RGQFTMultiplier
     num_result_qubits = n.bit_length()
     num_state_qubits = math.ceil(num_result_qubits / 2)
 
@@ -149,7 +145,6 @@ def quantum_factor_mul_oracle(n):
 
     # Create Quantum and Classical Registers, one more ancilla bit
     q = QuantumRegister(num_state_qubits * 2 + num_result_qubits + 1, 'q')
-    #c = ClassicalRegister(num_result_qubits + 1, 'c')
     circuit = QuantumCircuit(q)
     prep_state = QuantumCircuit(q)
     working_bits = list(range(num_state_qubits * 2))

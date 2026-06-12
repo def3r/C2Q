@@ -1,0 +1,14 @@
+c2q-json --export-qasm benchmark (unoptimized)
+Date: Sat Jun 13 12:49:29 AM IST 2026
+----------------------------------------
+add_01 : 1153 ms
+clique_01 : 1419 ms
+factor_01 : 1335 ms
+kcolor_01 : 1341 ms
+maxcut_01 : 1309 ms
+mul_01 : 1313 ms
+mis_01 : 1353 ms
+sub_01 : 1079 ms
+tsp_01 : 1349 ms
+vc_01 : 1336 ms
+----------------------------------------

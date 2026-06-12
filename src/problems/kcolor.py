@@ -7,7 +7,6 @@ from typing import Optional, Union, List, Dict
 
 from src.problems.np_complete import NPC
 from src.problems.qubo import QUBO
-import matplotlib.pyplot as plt
 from src.graph import Graph
 
 
@@ -130,6 +129,7 @@ class KColor(NPC):
             pos = nx.spring_layout(self.graph)  # Spring layout for node positioning
 
         # Plot the graph
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(8, 6))
         nx.draw(
             self.graph,

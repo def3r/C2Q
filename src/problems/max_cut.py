@@ -4,16 +4,9 @@ import numpy as np
 import networkx as nx
 from typing import Optional, Union, List, Dict
 
-from fpdf import FPDF
-from qiskit.visualization import plot_circuit_layout
-
-from src.algorithms.QAOA.QAOA import qaoa_no_optimization, sample_results, qaoa_optimize
-from src.algorithms.VQE.VQE import vqe_optimization
 from src.graph import Graph
 from src.problems.qubo import QUBO
-import matplotlib.pyplot as plt
 from src.problems.np_complete import NPC
-from src.recommender.recommender_engine import recommender
 
 
 class MaxCut(NPC):
@@ -103,6 +96,7 @@ class MaxCut(NPC):
         graph_nodes = list(self.graph.nodes())
         color_map = [node_colors[node] for node in graph_nodes]
 
+        import matplotlib.pyplot as plt
         if pos is None:
             pos = nx.spring_layout(self.graph)
 
@@ -158,6 +152,11 @@ class MaxCut(NPC):
         """
         Generates a PDF report summarizing the problem, its solution, and a visualization of the result.
         """
+        import matplotlib.pyplot as plt
+        from fpdf import FPDF
+        from src.algorithms.QAOA.QAOA import qaoa_optimize, sample_results
+        from src.algorithms.VQE.VQE import vqe_optimization, sample_results as vqe_sample_results
+        from src.recommender.recommender_engine import recommender
         image_path = "graph_visualization.png"
         qaoa_circuit_image_path = "quantum_circuit_qaoa.png"
         # Create an instance of FPDF with Times New Roman font

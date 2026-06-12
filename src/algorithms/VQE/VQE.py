@@ -1,13 +1,7 @@
 from qiskit.circuit.library import TwoLocal
-from qiskit.circuit import ParameterVector
-from qiskit.primitives import Estimator
-from qiskit import transpile
-from qiskit_aer import AerSimulator
-
-from scipy.optimize import minimize
-import numpy as np
-
 from qiskit.quantum_info import SparsePauliOp
+
+import numpy as np
 
 
 def initialize_parameters(reps):
@@ -22,7 +16,7 @@ def initialize_parameters(reps):
     return theta
 
 
-def cost_func_vqe(theta, circuit, hamiltonian, estimator=Estimator()):
+def cost_func_vqe(theta, circuit, hamiltonian, estimator=None):
     """Return estimate of energy from estimator
 
     Parameters:
@@ -34,12 +28,16 @@ def cost_func_vqe(theta, circuit, hamiltonian, estimator=Estimator()):
     Returns:
         float: Energy estimate
     """
+    if estimator is None:
+        from qiskit.primitives import Estimator
+        estimator = Estimator()
     cost = estimator.run(circuit, hamiltonian, theta, shots=1000).result().values[0]
 
     return cost
 
 
 def optimize_parameters(qc, ising, theta):
+    from scipy.optimize import minimize
     # Save the expectation values the optimization gives us so that we can visualize the optimization
     exp_value_list = []
 
@@ -102,6 +100,7 @@ def vqe_no_optimization(qubo, layers):
 
 
 def vqe_optimization(qubo, layers):
+    from qiskit.circuit import ParameterVector
     ising, offset = convert_qubo_to_ising(qubo)
     vqe_circuit = TwoLocal(len(qubo[0]), 'ry', 'cz', insert_barriers=True, reps=layers)
     num_parameters = vqe_circuit.num_parameters
@@ -119,7 +118,11 @@ def vqe_optimization(qubo, layers):
     return vqe_dict
 
 
-def sample_results(qc, parameters, theta, backend=AerSimulator()):
+def sample_results(qc, parameters, theta, backend=None):
+    from qiskit import transpile
+    from qiskit_aer import AerSimulator
+    if backend is None:
+        backend = AerSimulator()
     qc_assigned_parameters = qc.assign_parameters(theta)
     qc_transpiled = transpile(qc_assigned_parameters, backend=backend)
     qc_transpiled.measure_all()
@@ -136,5 +139,4 @@ def sample_results(qc, parameters, theta, backend=AerSimulator()):
     # Convert string to array
     X = np.fromstring(highest_possible_solution, np.int8) - 48
     X = X[::-1]
-    #print(f'Most probable solution: {highest_possible_solution}')
     return X

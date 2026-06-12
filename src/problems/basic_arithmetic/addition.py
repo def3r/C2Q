@@ -1,10 +1,7 @@
 import os
 from collections import Counter
 
-from matplotlib import pyplot as plt
-from pylatex import Figure
-from qiskit import QuantumCircuit, transpile
-from qiskit_aer import AerSimulator
+from qiskit import QuantumCircuit
 
 from src.problems.basic_arithmetic.arithmetic import Arithmetic
 from src.problems.basic_arithmetic.utils import decimal_to_complement_binary_list, complement_binary_list_to_decimal

@@ -1,11 +1,7 @@
-from qiskit import QuantumCircuit, transpile
-from qiskit_aer import AerSimulator
-from qiskit_aer.primitives import Estimator as AerEstimator, Sampler as AerSampler
+from qiskit import QuantumCircuit
 from qiskit.circuit import ParameterVector
 from qiskit.circuit.library import PauliEvolutionGate
 from qiskit.quantum_info import SparsePauliOp
-
-from scipy.optimize import minimize
 
 import logging
 import os
@@ -24,6 +20,7 @@ def _is_aer_backend(backend) -> bool:
 
 
 def _create_estimator(backend):
+    from qiskit_aer.primitives import Estimator as AerEstimator
     try:
         runtime_estimator, _ = _load_runtime_primitives()
         estimator = runtime_estimator(mode=backend)
@@ -39,6 +36,7 @@ def _create_estimator(backend):
 
 
 def _create_sampler(backend):
+    from qiskit_aer.primitives import Sampler as AerSampler
     try:
         _, runtime_sampler = _load_runtime_primitives()
         sampler = runtime_sampler(mode=backend)
@@ -167,6 +165,7 @@ def cost_estimator(theta, qc_transpiled, ising, estimator, estimator_kind, exp_v
 
 
 def optimize_parameters(qc_transpiled, ising, parameters, theta, estimator, estimator_kind):
+    from scipy.optimize import minimize
     # Save the expectation values the optimization gives us so that we can visualize the optimization
     exp_value_list = []
 
@@ -226,7 +225,7 @@ def qaoa_no_optimization(qubo, layers):
     return qaoa_dict
 
 
-def qaoa_optimize(qubo, layers, backend=AerSimulator()):
+def qaoa_optimize(qubo, layers, backend=None):
     """
     Implements QAOA with given QUBO.
 
@@ -242,6 +241,11 @@ def qaoa_optimize(qubo, layers, backend=AerSimulator()):
     - minimum_objective_value (float): Minimum objective value at the end of the optimization
     - exp_value_list (list): A list of expectation values in every QAOA layer
     """
+    from qiskit import transpile
+    from qiskit_aer import AerSimulator
+
+    if backend is None:
+        backend = AerSimulator()
 
     # Number of qubits = length of the QUBO matrix
     n = len(qubo)
@@ -283,7 +287,11 @@ def qaoa_optimize(qubo, layers, backend=AerSimulator()):
     return qaoa_dict
 
 
-def sample_results(qc, parameters, theta, backend=AerSimulator()):
+def sample_results(qc, parameters, theta, backend=None):
+    from qiskit import transpile
+    from qiskit_aer import AerSimulator
+    if backend is None:
+        backend = AerSimulator()
     qc_transpiled = transpile(qc, backend, seed_transpiler=77, layout_method='sabre', routing_method='sabre')
 
     sampler_kind, sampler = _create_sampler(backend)

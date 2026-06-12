@@ -2,16 +2,8 @@ import logging
 import os
 
 import networkx as nx
-from matplotlib import pyplot as plt
-from pylatex import NoEscape, Figure, Subsection
 
-from src.algorithms.QAOA.QAOA import qaoa_optimize
-from src.algorithms.VQE.VQE import vqe_optimization
-from src.circuits_library import cnf_to_quantum_oracle_optimized
 from src.problems.base import Base
-from src.recommender.recommender_engine import recommender
-from src.reduction import sat_to_3sat
-from src.sat_to_qubo import Chancellor
 
 
 debug = False
@@ -32,6 +24,7 @@ class NPC(Base):
 
     def qaoa(self):
         qubo = self.to_qubo().Q
+        from src.algorithms.QAOA.QAOA import qaoa_optimize
         # Run QAOA on local simulator
         qaoa_dict = qaoa_optimize(qubo, layers=1)
 
@@ -41,10 +34,11 @@ class NPC(Base):
 
     def vqe(self):
         qubo = self.to_qubo().Q
-        # Run QAOA on local simulator
+        from src.algorithms.VQE.VQE import vqe_optimization
+        # Run VQE on local simulator
         vqe_dict = vqe_optimization(qubo, layers=1)
 
-        # Obtain the parameters of the QAOA run
+        # Obtain the parameters of the VQE run
         qc = vqe_dict["qc"]
         return qc
 
@@ -52,6 +46,7 @@ class NPC(Base):
         return {"qaoa": self.qaoa(), "vqe": self.vqe(), "grover": self.grover_sat(1)}
 
     def recommender_engine(self):
+        from src.recommender.recommender_engine import recommender
         qcs = self._construct_circuits()
         for qc in qcs.values():
             try:
@@ -73,9 +68,9 @@ class NPC(Base):
     def to_sat(self):
         raise NotImplementedError("should be implemented in subclass")
     def reduce_to_3sat(self):
-        # if sat is not none
+        from src.reduction import sat_to_3sat
+        from src.sat_to_qubo import Chancellor
         self.three_sat = sat_to_3sat(self.sat)
-        # further reduce literals, <= 3
         chancellor = Chancellor(self.three_sat)
         chancellor.fillQ()
         chancellor.visualizeQ()
@@ -204,6 +199,9 @@ class NPC(Base):
         print(f"PDF report generated in {end_time - start_time:.2f} seconds.")
 
     def _qaoa_latex(self, doc, pos, directory):
+        import matplotlib.pyplot as plt
+        from pylatex import NoEscape, Figure
+        from src.algorithms.QAOA.QAOA import qaoa_optimize, sample_results
         qubo = self.to_qubo().Q
         qaoa_dict = qaoa_optimize(qubo, layers=3)
         qaoa_qc = qaoa_dict["qc"]
@@ -214,7 +212,6 @@ class NPC(Base):
             latex_code = qaoa_qc.draw(output="latex_source")
             print(latex_code)
 
-        from src.algorithms.QAOA.QAOA import sample_results
         if parameters is not None and theta is not None:
             qaoa_solution = sample_results(qaoa_qc, parameters, theta)
         else:
@@ -238,7 +235,7 @@ class NPC(Base):
         self.qaoa_circuit_image_path = "quantum_circuit_qaoa.png"
         qaoa_circuit_abs_path = os.path.join(directory, self.qaoa_circuit_image_path)
         qaoa_qc.decompose().draw(style="mpl")
-        plt.gcf().set_size_inches(50, 20)  # set a safe size
+        plt.gcf().set_size_inches(50, 20)
         plt.tight_layout()
         plt.savefig(qaoa_circuit_abs_path, dpi=150)
         plt.close()
@@ -253,12 +250,14 @@ class NPC(Base):
         }
 
     def _vqe_latex(self, doc, pos, directory):
+        import matplotlib.pyplot as plt
+        from pylatex import NoEscape, Figure
+        from src.algorithms.VQE.VQE import vqe_optimization, sample_results
         qubo = self.to_qubo().Q
         vqe_dict = vqe_optimization(qubo, layers=3)
         vqe_qc = vqe_dict["qc"]
         parameters = vqe_dict.get("parameters")
         theta = vqe_dict.get("theta")
-        from src.algorithms.VQE.VQE import sample_results
         if parameters is not None and theta is not None:
             vqe_solution = sample_results(vqe_qc, parameters, theta)
         else:
@@ -282,7 +281,7 @@ class NPC(Base):
         self.vqe_circuit_image_path = "quantum_circuit_vqe.png"
         vqe_circuit_abs_path = os.path.join(directory, self.vqe_circuit_image_path)
         vqe_qc.decompose().draw(style="mpl")
-        plt.gcf().set_size_inches(50, 20)  # set a safe size
+        plt.gcf().set_size_inches(50, 20)
         plt.tight_layout()
         plt.savefig(vqe_circuit_abs_path, dpi=150)
         plt.close()
@@ -296,8 +295,10 @@ class NPC(Base):
         }
 
     def _grover_latex(self, doc, pos, directory):
-        grover_qc = self.grover_sat(iterations=1)
+        import matplotlib.pyplot as plt
+        from pylatex import NoEscape, Figure
         from src.algorithms.grover import sample_results
+        grover_qc = self.grover_sat(iterations=1)
         grover_solution = sample_results(grover_qc)
         doc.append("Most Probable Solution for Grover's Algorithm:\n")
         doc.append(NoEscape(r"\begin{itemize}"))
@@ -305,7 +306,6 @@ class NPC(Base):
             assignment = "true" if state else "false"
             doc.append(NoEscape(rf"\item Variable \( x_{{{i + 1}}} \) is set to {assignment}"))
         doc.append(NoEscape(r"\end{itemize}"))
-        # print(grover_solution)
         self.draw_result(grover_solution, pos=pos)
         self.grover_result_image_path = "grover_result.png"
         grover_result_abs_path = os.path.join(directory, self.grover_result_image_path)
@@ -325,6 +325,8 @@ class NPC(Base):
             grover_fig.add_caption("Grover's Quantum Circuit")
 
     def _graph_latex(self, doc, pos, directory):
+        import matplotlib.pyplot as plt
+        from pylatex import NoEscape, Figure, Subsection
         with doc.create(Subsection("Graph Details", numbering=False)):
             doc.append(f"Number of Nodes: {len(self.nodes)}\n")
             edges = list(self.graph.edges())
@@ -346,12 +348,14 @@ class NPC(Base):
         return self.graph_image_path
 
     def _oracle_latex(self, doc, directory):
+        import matplotlib.pyplot as plt
+        from pylatex import NoEscape, Figure
+        from src.circuits_library import cnf_to_quantum_oracle_optimized
         problem_name = self.__class__.__name__
         doc.append(f'The corresponding oracle for the {problem_name} is shown below:\n')
         self.oracle_circuit_image_path = "quantum_circuit_oracle.png"
         oracle_circuit_abs_path = os.path.join(directory, self.oracle_circuit_image_path)
         self.to_sat()
-        # maximal_independent_set_cnf = maximal_independent_set_to_sat(self.graph)
         oracle = cnf_to_quantum_oracle_optimized(self.sat)
         oracle.draw(style="mpl")
         plt.savefig(oracle_circuit_abs_path)
@@ -366,6 +370,8 @@ class NPC(Base):
             oracle_fig.add_caption(f'Corresponding Oracle Visualization for the {problem_name} Problem')
 
     def _device_recommendation_latex(self, doc, qaoa_qc, directory):
+        from pylatex import NoEscape, Figure, Subsection
+        from src.recommender.recommender_engine import recommender
         string, _ = recommender(qaoa_qc, save_figures=False)
         image_paths = []
         for plot_name, caption in zip([
@@ -385,10 +391,8 @@ class NPC(Base):
                 image_paths.append(fig_path)
 
         with doc.create(Subsection("Device Recommendation Summary", numbering=False)):
-            # doc.append("\\textbf{Here is the device recommendation summary based on error, time, and price:}\\\n")
             doc.append(string)
 
-        # delete the generated figures after embedding them into the LaTeX doc
         for p in image_paths:
             try:
                 os.remove(p)

@@ -1,19 +1,7 @@
 import os
 from collections import Counter
 
-from matplotlib import pyplot as plt
-from pylatex import Figure, NewLine
-from qiskit_aer import AerSimulator
-
-from src.algorithms.grover import grover
-from src.circuits_library import quantum_factor_mul_oracle
 from src.problems.problem import Problem
-#from qiskit_algorithms import AmplificationProblem
-
-from qiskit.circuit.library import PhaseOracle, GroverOperator
-#from qiskit_algorithms import AmplificationProblem, Grover
-from qiskit import qasm2, QuantumCircuit, transpile
-from qiskit.primitives import Sampler
 
 
 # src/algorithms/base_algorithm.py
@@ -23,6 +11,8 @@ class Factor(Problem):
         self.number = number
 
     def grover(self, iterations=2):
+        from src.algorithms.grover import grover
+        from src.circuits_library import quantum_factor_mul_oracle
         oracle, prep_state, obj_bits, working_bits = quantum_factor_mul_oracle(self.number)
         grover_circuit = grover(oracle,
                                 objective_qubits=obj_bits,
@@ -33,6 +23,8 @@ class Factor(Problem):
         return grover_circuit
 
     def execute(self):
+        from qiskit import transpile
+        from qiskit_aer import AerSimulator
         qc = self.grover(iterations=2)
 
         backend = AerSimulator()
@@ -117,10 +109,11 @@ class Factor(Problem):
         print(f"PDF report generated in {end_time - start_time:.2f} seconds.")
 
     def _grover_latex(self, doc, directory):
+        import matplotlib.pyplot as plt
+        from pylatex import Figure
         problem_name = self.__class__.__name__
         doc.append(f'The corresponding grover circuit for the {problem_name} is shown below:\n')
         self.grover_circuit_image_path = os.path.join(directory, "quantum_circuit_oracle.png")
-        # maximal_independent_set_cnf = maximal_independent_set_to_sat(self.graph)
         grover_qc = self.grover()
         grover_qc.draw(style="mpl")
         plt.savefig(self.grover_circuit_image_path)

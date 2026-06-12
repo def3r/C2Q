@@ -1,11 +1,6 @@
 import os
 from collections import Counter
 
-from matplotlib import pyplot as plt
-from pylatex import Figure, NewLine
-from qiskit import transpile
-from qiskit_aer import AerSimulator
-
 from src.problems.basic_arithmetic.utils import complement_binary_list_to_decimal, decimal_to_complement_binary_list
 
 tags = {"Add": "+", "Sub": "-", "Mul": "*"}
@@ -24,6 +19,8 @@ class Arithmetic:
         raise NotImplementedError("should be implemented in derived classes")
 
     def execute(self):
+        from qiskit import transpile
+        from qiskit_aer import AerSimulator
         qc = self.quantum_circuit()
 
         backend = AerSimulator()
@@ -68,7 +65,7 @@ class Arithmetic:
         import os
         import matplotlib.pyplot as plt
         import networkx as nx
-        from pylatex import Document, Section, Subsection, Figure, NoEscape, Package
+        from pylatex import Document, Section, Subsection, Figure, NoEscape, Package, NewLine
 
         if directory is None:
             directory = os.getcwd()

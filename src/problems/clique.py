@@ -4,15 +4,8 @@ import numpy as np
 import networkx as nx
 from typing import Optional, Union, List, Dict
 
-from fpdf import FPDF
-
-from src.algorithms.QAOA.QAOA import qaoa_no_optimization, qaoa_optimize, sample_results
 from src.graph import Graph
 from src.problems.qubo import QUBO
-import matplotlib.pyplot as plt
-
-from src.recommender.recommender_engine import recommender
-from src.reduction import clique_to_sat
 from src.problems.np_complete import NPC
 
 class Clique(NPC):
@@ -63,6 +56,7 @@ class Clique(NPC):
         return QUBO(Q)
 
     def reduce_to_sat(self):
+        from src.reduction import clique_to_sat
         self.sat = clique_to_sat(self.graph, self.size)
 
 
@@ -105,6 +99,7 @@ class Clique(NPC):
         graph_nodes = list(self.graph.nodes())
         color_map = [node_colors[node] for node in graph_nodes]
 
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(8, 6))
         nx.draw(
             self.graph,
@@ -124,6 +119,10 @@ class Clique(NPC):
         Args:
             result: The calculated result of the problem (binary vector).
         """
+        import matplotlib.pyplot as plt
+        from fpdf import FPDF
+        from src.algorithms.QAOA.QAOA import qaoa_optimize, sample_results
+        from src.recommender.recommender_engine import recommender
         # Create an instance of FPDF
         pdf = FPDF()
 

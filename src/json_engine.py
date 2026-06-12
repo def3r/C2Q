@@ -48,37 +48,46 @@ import shutil
 import traceback
 from typing import Any, Dict, Tuple, Optional, List
 
-from src.graph import Graph
-
-from src.problems.basic_arithmetic.addition import Add
-from src.problems.basic_arithmetic.multiplication import Mul
-from src.problems.basic_arithmetic.subtraction import Sub
-from src.problems.clique import Clique
-from src.problems.factorization import Factor
-from src.problems.kcolor import KColor
-from src.problems.max_cut import MaxCut
-from src.problems.maximal_independent_set import MIS
-from src.problems.minimum_vertex_cover import MVC
-from src.problems.tsp import TSP
 import os
+import importlib
 from pathlib import Path
 
 # -------------------------------------------------------------------
 # 1. Family aliases / canonicalisation
 # -------------------------------------------------------------------
 
+# Canonical family names — used for key lookups without importing anything.
 PROBLEMS = {
-    "MaxCut": MaxCut,
-    "MIS": MIS,
-    "TSP": TSP,
-    "Clique": Clique,
-    "KColor": KColor,
-    "Factor": Factor,
-    "ADD": Add,
-    "MUL": Mul,
-    "SUB": Sub,
-    "VC": MVC,
+    "MaxCut", "MIS", "TSP", "Clique", "KColor",
+    "Factor", "ADD", "MUL", "SUB", "VC",
 }
+
+# Lazy import table: family → (module, class_name)
+_PROBLEM_PATHS = {
+    "MaxCut": ("src.problems.max_cut",                          "MaxCut"),
+    "MIS":    ("src.problems.maximal_independent_set",          "MIS"),
+    "TSP":    ("src.problems.tsp",                              "TSP"),
+    "Clique": ("src.problems.clique",                           "Clique"),
+    "KColor": ("src.problems.kcolor",                           "KColor"),
+    "Factor": ("src.problems.factorization",                    "Factor"),
+    "ADD":    ("src.problems.basic_arithmetic.addition",        "Add"),
+    "MUL":    ("src.problems.basic_arithmetic.multiplication",  "Mul"),
+    "SUB":    ("src.problems.basic_arithmetic.subtraction",     "Sub"),
+    "VC":     ("src.problems.minimum_vertex_cover",             "MVC"),
+}
+
+
+def _load_problem(family: str):
+    """Import and return the problem class for `family` on first use."""
+    module_path, class_name = _PROBLEM_PATHS[family]
+    mod = importlib.import_module(module_path)
+    return getattr(mod, class_name)
+
+
+def _load_graph():
+    """Lazily import Graph to avoid pulling in matplotlib/networkx at startup."""
+    from src.graph import Graph  # noqa: PLC0415
+    return Graph
 
 DEFAULT_EXAMPLES_ROOT = "src/c2q-dataset/inputs/json_dsl"
 DEFAULT_REPORTS_ROOT = "artifacts/json_dsl_reports"
@@ -210,7 +219,7 @@ def canonicalise_family(raw: Optional[str]) -> Optional[str]:
         return raw_stripped
 
     # Case-insensitive direct match
-    for key in PROBLEMS.keys():
+    for key in PROBLEMS:
         if raw_stripped.lower() == key.lower():
             return key
 
@@ -611,7 +620,7 @@ def generate_all_examples(n_per_family: int = 10) -> Dict[str, List[Dict[str, An
     Generate n_per_family JSON-DSL examples for each canonical family.
     """
     examples: Dict[str, List[Dict[str, Any]]] = {}
-    for fam in PROBLEMS.keys():
+    for fam in PROBLEMS:
         fam_examples = []
         for i in range(n_per_family):
             fam_examples.append(generate_example_for_family(fam, i))
@@ -670,6 +679,7 @@ def self_test_examples(root: str = DEFAULT_EXAMPLES_ROOT) -> None:
                     raise ValueError("No graphs extracted from instance")
 
                 # Build real Graph objects to exercise matrix/edge-list handling
+                Graph = _load_graph()
                 for name, payload in graphs.items():
                     g_obj = Graph(payload)
                     _ = g_obj.G.number_of_nodes()
@@ -684,14 +694,14 @@ def self_test_examples(root: str = DEFAULT_EXAMPLES_ROOT) -> None:
 
                     left, right = extract_binary_operands(norm_inst)
 
-                    _ = PROBLEMS[family]([left, right])
+                    _ = _load_problem(family)([left, right])
 
 
                 elif family == "Factor":
 
                     n = extract_factor_number(norm_inst)
 
-                    _ = PROBLEMS[family](n)
+                    _ = _load_problem(family)(n)
 
                 else:
 
@@ -750,18 +760,19 @@ def batch_generate_reports(
             if problem_class == "GRAPH":
                 graphs = extract_graphs_from_instance(instance)
                 last_graph = None
+                Graph = _load_graph()
                 for _, payload in graphs.items():
                     last_graph = Graph(payload)
-                problem = PROBLEMS[family](last_graph.G)
+                problem = _load_problem(family)(last_graph.G)
 
             elif problem_class == "ARITHMETIC":
                 norm = normalise_arithmetic_instance(family, instance)
                 if family in {"ADD", "MUL", "SUB"}:
                     left, right = extract_binary_operands(norm)
-                    problem = PROBLEMS[family]([left, right])
+                    problem = _load_problem(family)([left, right])
                 elif family == "Factor":
                     n = extract_factor_number(norm)
-                    problem = PROBLEMS[family](n)
+                    problem = _load_problem(family)(n)
                 else:
                     raise ValueError(f"Unknown arithmetic family {family}")
 
@@ -919,6 +930,7 @@ def main():
     if problem_class == "GRAPH":
         graphs = extract_graphs_from_instance(instance)
         last_graph_obj = None
+        Graph = _load_graph()
 
         for name, payload in graphs.items():
             data = Graph(payload)
@@ -932,7 +944,7 @@ def main():
         if last_graph_obj is None:
             raise ValueError("No graph payload could be extracted from JSON instance.")
 
-        problem = PROBLEMS[family](last_graph_obj.G)
+        problem = _load_problem(family)(last_graph_obj.G)
 
     # -----------------------------
     # ARITHMETIC / FACTORISATION
@@ -944,13 +956,13 @@ def main():
             # Binary arithmetic → [left, right]
             left, right = extract_binary_operands(norm_instance)
             data = [left, right]
-            problem = PROBLEMS[family](data)
+            problem = _load_problem(family)(data)
 
         elif family == "Factor":
             # Factorisation → single integer
             n = extract_factor_number(norm_instance)
             data = n
-            problem = PROBLEMS[family](data)
+            problem = _load_problem(family)(data)
 
         else:
             raise ValueError(f"Unknown ARITHMETIC family: {family!r}")

@@ -1,27 +1,12 @@
 import os
 import time
 
-import networkx
 import numpy as np
 import networkx as nx
 from typing import Optional, Union, List, Dict
 
-from fpdf import FPDF
-from pylatex import Document, Package, Section, Subsection, Figure, NoEscape
-from qiskit import transpile, QuantumCircuit
-from qiskit_aer import AerSimulator
-
-from src.algorithms.QAOA.QAOA import qaoa_optimize
-from src.algorithms.VQE.VQE import vqe_optimization
-from src.algorithms.grover import grover
-from src.circuits_library import cnf_to_quantum_oracle_optimized
 from src.graph import Graph
-from src.problems.Three_SAT import ThreeSat
 from src.problems.qubo import QUBO
-import matplotlib.pyplot as plt
-
-from src.recommender.recommender_engine import recommender
-from src.reduction import independent_set_to_sat, maximal_independent_set_to_sat, sat_to_3sat
 from src.problems.np_complete import NPC
 
 
@@ -52,7 +37,7 @@ class MIS(NPC):
         self.indices_node = {idx: node for idx, node in enumerate(self.nodes)}
 
     def reduce_to_sat(self):
-        n = len(self.nodes)
+        from src.reduction import independent_set_to_sat
         self.sat = independent_set_to_sat(self.graph)
 
     def to_qubo(self, A: float = 1.0, B: float = 1.0) -> 'QUBO':
@@ -125,6 +110,7 @@ class MIS(NPC):
         graph_nodes = list(self.graph.nodes())
         color_map = [node_colors[node] for node in graph_nodes]
 
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(8, 6))
         nx.draw(
             self.graph,
@@ -139,10 +125,14 @@ class MIS(NPC):
         # plt.show()
 
     def to_sat(self):
+        from src.reduction import maximal_independent_set_to_sat
         self.sat = maximal_independent_set_to_sat(self.graph)
 
     def grover_sat(self, iterations=1):
-        independent_set_cnf = independent_set_to_sat(self.graph)
+        from qiskit import QuantumCircuit
+        from src.algorithms.grover import grover
+        from src.circuits_library import cnf_to_quantum_oracle_optimized
+        from src.reduction import maximal_independent_set_to_sat
         maximal_independent_set_cnf = maximal_independent_set_to_sat(self.graph)
         oracle = cnf_to_quantum_oracle_optimized(maximal_independent_set_cnf)
         state_prep = QuantumCircuit(oracle.num_qubits)
@@ -155,6 +145,8 @@ class MIS(NPC):
         return grover_circuit
 
     def report_3sat(self):
+        from src.reduction import maximal_independent_set_to_sat, sat_to_3sat
+        from src.problems.Three_SAT import ThreeSat
         formula = maximal_independent_set_to_sat(self.graph)
         formula = sat_to_3sat(formula)
         sat = ThreeSat(formula)
@@ -164,6 +156,11 @@ class MIS(NPC):
         """
         Generates a PDF report summarizing the problem, its solution, and a visualization of the result.
         """
+        import matplotlib.pyplot as plt
+        from fpdf import FPDF
+        from src.algorithms.QAOA.QAOA import qaoa_optimize
+        from src.algorithms.VQE.VQE import vqe_optimization
+        from src.recommender.recommender_engine import recommender
         start_time = time.time()
         image_path = "graph_visualization.png"
         qaoa_circuit_image_path = "quantum_circuit_qaoa.png"

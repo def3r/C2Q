@@ -1,6 +1,5 @@
 import networkx as nx
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class Graph:
@@ -169,6 +168,7 @@ class Graph:
 
     def visualize(self):
         """Visualize the graph using matplotlib."""
+        import matplotlib.pyplot as plt
         pos = nx.spring_layout(self.G)
         nx.draw(self.G, pos, with_labels=True, node_color="lightblue", node_size=500, font_size=15)
 

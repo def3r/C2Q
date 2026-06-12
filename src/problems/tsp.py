@@ -5,7 +5,6 @@ from typing import Optional, Union, List, Dict
 from src.graph import Graph
 from src.problems.np_complete import NPC
 from src.problems.qubo import QUBO
-import matplotlib.pyplot as plt
 
 
 class TSP(NPC):
@@ -145,6 +144,7 @@ class TSP(NPC):
         if pos is None:
             pos = nx.spring_layout(self.graph)
 
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(8, 6))
 
         # Draw the graph
