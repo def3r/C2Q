@@ -125,7 +125,7 @@ class MaxCut(NPC):
         # plt.show not included
         # plt.show()
 
-    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+    def export_circuits_qasm(self, output_dir: str = ".", basename: str = None) -> dict:
         """Export QAOA and VQE circuits as QASM 2.0 files into output_dir.
 
         No simulation or optimization is performed — circuits are exported as
@@ -136,6 +136,7 @@ class MaxCut(NPC):
         from src.algorithms.QAOA.QAOA import qaoa_no_optimization
         from src.algorithms.VQE.VQE import vqe_no_optimization
         os.makedirs(output_dir, exist_ok=True)
+        name = basename if basename else "max_cut"
         qubo = self.to_qubo().Q
         builders = [
             ("qaoa", lambda: qaoa_no_optimization(qubo, layers=1)["qc"]),
@@ -145,7 +146,7 @@ class MaxCut(NPC):
         for algo, build in builders:
             try:
                 qc = build()
-                path = os.path.join(output_dir, f"max_cut_{algo}.qasm")
+                path = os.path.join(output_dir, f"{name}_{algo}.qasm")
                 export_qasm(qc.decompose(), path)
                 paths[algo] = path
                 print(f"  Exported {algo} circuit → {path}")

@@ -397,7 +397,7 @@ class NPC(Base):
 
         return image_paths
 
-    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+    def export_circuits_qasm(self, output_dir: str = ".", basename: str = None) -> dict:
         """Export QAOA, VQE, and Grover circuits as QASM 2.0 files into output_dir.
 
         No simulation or optimization is performed — circuits are exported as
@@ -408,7 +408,7 @@ class NPC(Base):
         from src.algorithms.QAOA.QAOA import qaoa_no_optimization
         from src.algorithms.VQE.VQE import vqe_no_optimization
         os.makedirs(output_dir, exist_ok=True)
-        name = self.__class__.__name__.lower()
+        name = basename if basename else self.__class__.__name__.lower()
         qubo = self.to_qubo().Q
         builders = [
             ("qaoa", lambda: qaoa_no_optimization(qubo, layers=1)["qc"]),

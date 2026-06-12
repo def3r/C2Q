@@ -772,7 +772,7 @@ def batch_generate_reports(
             print(f"✅ SUCCESS: {output_pdf.name}\n")
             if qasm_dir is not None and hasattr(problem, "export_circuits_qasm"):
                 print(f"  Exporting QASM circuits for {fname}...")
-                problem.export_circuits_qasm(output_dir=qasm_dir)
+                problem.export_circuits_qasm(output_dir=qasm_dir, basename=fname)
             passed += 1
 
         except Exception as e:
@@ -848,6 +848,13 @@ def main():
         type=str,
         default=".",
         help="Directory to write .qasm files into (default: current directory).",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Base name (without extension) for exported QASM files. "
+             "Defaults to the input filename stem (e.g. 'foo' → 'foo_qaoa.qasm').",
     )
 
     args = parser.parse_args()
@@ -956,8 +963,10 @@ def main():
 
     if args.export_qasm:
         if hasattr(problem, "export_circuits_qasm"):
-            print(f"📄 Exporting QASM circuits to {args.qasm_output_dir}/...")
-            problem.export_circuits_qasm(output_dir=args.qasm_output_dir)
+            import os as _os
+            basename = args.output if args.output else _os.path.splitext(_os.path.basename(args.input))[0]
+            print(f"📄 Exporting QASM circuits to {args.qasm_output_dir}/ (basename: {basename})...")
+            problem.export_circuits_qasm(output_dir=args.qasm_output_dir, basename=basename)
         else:
             print("⚠️  This problem type does not support QASM export.")
     else:

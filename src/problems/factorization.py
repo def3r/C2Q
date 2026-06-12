@@ -51,15 +51,16 @@ class Factor(Problem):
 
         return top_two_decimals
 
-    def export_circuits_qasm(self, output_dir: str = ".") -> dict:
+    def export_circuits_qasm(self, output_dir: str = ".", basename: str = None) -> dict:
         """Export the Grover circuit as a QASM 2.0 file into output_dir."""
         import os
         from src.circuits_library import export_qasm
         os.makedirs(output_dir, exist_ok=True)
+        name = basename if basename else "factor"
         paths = {}
         try:
             qc = self.grover()
-            path = os.path.join(output_dir, "factor_grover.qasm")
+            path = os.path.join(output_dir, f"{name}_grover.qasm")
             export_qasm(qc.decompose(), path)
             paths["grover"] = path
             print(f"  Exported grover circuit → {path}")
